@@ -70,7 +70,7 @@ class Foveate_OGL:
 		if not self.visualize:
 			glfw.window_hint(glfw.VISIBLE, glfw.FALSE) #we cannot create OpenGL context without some sort of window, so we just hide it if no visualization is needed
 	
-		self.window = glfw.create_window(1024, 980, "My OpenGL window", None, None)
+		self.window = glfw.create_window(1024, 980, "foveated", None, None)
 
 		if not self.window:
 			glfw.terminate()
@@ -137,9 +137,8 @@ class Foveate_OGL:
 		if self.visualize:
 			glfw.set_window_size(self.window, self.img_height, self.img_width)
 		self.updateTexture()
-		if gazePosition[0] < 0:
-			gazePosition[0] = self.img_height//2
-			gazePosition[1] = self.img_width//2
+		if self.gazePosition[0] < 0:
+			self.gazePosition = (self.img_height//2, self.img_width//2)
 			self.updateGaze(gazeRadius, gazePosition)
 
 	#load image from file

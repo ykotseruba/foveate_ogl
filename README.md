@@ -41,5 +41,5 @@ The available options include:
 5. ```-o, --outputDir``` - output directory (will be created if doesn't exist)
 
 
-Should you have any questions about using this code, feel free to raise and issue or email me (yulia_k at eecs.yorku.ca).
+Should you have any questions about using this code, feel free to raise an issue or email me (yulia_k at eecs.yorku.ca).
 

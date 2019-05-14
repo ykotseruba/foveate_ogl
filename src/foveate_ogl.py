@@ -161,10 +161,12 @@ class Foveate_OGL:
 			glfw.set_window_size(self.window, self.img_width, self.img_height)
 
 		self.updateTexture()
+
 		if self.gazePosition[0] < 0:
 			gazePosition = (self.img_height/2, self.img_width/2)
-			self.updateGaze(self.gazeRadius, gazePosition)
-		
+		else:
+			gazePosition = self.gazePosition
+		self.updateGaze(self.gazeRadius, gazePosition)
 
 	def updateGaze(self, newGazeRadius, newGazePosition):
 		self.gazePosition = newGazePosition

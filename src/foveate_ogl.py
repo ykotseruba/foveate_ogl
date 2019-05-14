@@ -135,10 +135,10 @@ class Foveate_OGL:
 		self.img = img.copy()
 		self.img_height, self.img_width = self.img.size
 		if self.visualize:
-			glfw.set_window_size(self.window, self.img_height, self.img_width)
+			glfw.set_window_size(self.window, self.img_width, self.img_height)
 		self.updateTexture()
 		if self.gazePosition[0] < 0:
-			self.gazePosition = (self.img_height//2, self.img_width//2)
+			self.gazePosition = (self.img_width//2, self.img_height//2)
 			self.updateGaze(gazeRadius, gazePosition)
 
 	#load image from file
@@ -146,10 +146,10 @@ class Foveate_OGL:
 		self.img = Image.open(imgFilename)
 		self.img_height, self.img_width = self.img.size
 		if self.visualize:
-			glfw.set_window_size(self.window, self.img_height, self.img_width)
+			glfw.set_window_size(self.window, self.img_width, self.img_height)
 		self.updateTexture()
 		if self.gazePosition[0] < 0:
-			self.gazePosition = (self.img_height//2, self.img_width//2)
+			self.gazePosition = (self.img_width//2, self.img_height//2)
 			self.updateGaze(self.gazeRadius, self.gazePosition)
 
 	def updateGaze(self, newGazeRadius, newGazePosition):

@@ -1,4 +1,4 @@
-# Foveate_OGL
+# Foveate OGL
 Implementation of foveation transform for static images in Python and PyOpenGL
 The basis for this code is the [BlurredMipmapDemo from Psychtoolbox-3](https://github.com/Psychtoolbox-3/Psychtoolbox-3/blob/master/Psychtoolbox/PsychDemos/BlurredMipmapDemo.m).
 

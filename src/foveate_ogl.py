@@ -7,9 +7,10 @@ from PIL import Image
 import sys
 import time
 import getopt
-from os import listdir
+from os import listdir, makedirs
 from os.path import join
 
+MAX_SIZE = 1600
 
 vertex_shader = """
 	#version 330
@@ -97,6 +98,7 @@ class Foveate_OGL:
 		self.shader = OpenGL.GL.shaders.compileProgram(OpenGL.GL.shaders.compileShader(vertex_shader, GL_VERTEX_SHADER),
 												  OpenGL.GL.shaders.compileShader(fragment_shader, GL_FRAGMENT_SHADER))
 
+
 		VBO = glGenBuffers(1)
 		glBindBuffer(GL_ARRAY_BUFFER, VBO)
 		glBufferData(GL_ARRAY_BUFFER, 128, quad, GL_STATIC_DRAW)
@@ -119,8 +121,8 @@ class Foveate_OGL:
 
 		self.auxParametersLoc = glGetUniformLocation(self.shader, 'auxParameters')
 
-		texture = glGenTextures(1)
-		glBindTexture(GL_TEXTURE_2D, texture)
+		self.texture = glGenTextures(1)
+		glBindTexture(GL_TEXTURE_2D, self.texture)
 		#texture wrapping params
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
@@ -128,56 +130,85 @@ class Foveate_OGL:
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
 
+		if not self.visualize:
+			self.FBO = glGenFramebuffers(1)
+			glBindFramebuffer(GL_FRAMEBUFFER, self.FBO)
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, self.texture, 0)
+
+			self.RBO = glGenRenderbuffers(1)
+			glBindRenderbuffer(GL_RENDERBUFFER, self.RBO)
+			glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA, MAX_SIZE, MAX_SIZE)
+			glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, self.RBO)
+
 		glUseProgram(self.shader)
 
 	#load image from array
 	def loadImgFromArray(self, img = None):
 		self.img = img.copy()
-		self.img_height, self.img_width = self.img.size
+		self.img_width, self.img_height = self.img.size
 		if self.visualize:
 			glfw.set_window_size(self.window, self.img_width, self.img_height)
 		self.updateTexture()
 		if self.gazePosition[0] < 0:
-			self.gazePosition = (self.img_width//2, self.img_height//2)
+			self.gazePosition = (self.img_height/2, self.img_width/2)
 			self.updateGaze(gazeRadius, gazePosition)
 
 	#load image from file
 	def loadImgFromFile(self, imgFilename='images/Yarbus_scaled.jpg'):
 		self.img = Image.open(imgFilename)
-		self.img_height, self.img_width = self.img.size
+		self.img_width, self.img_height = self.img.size
 		if self.visualize:
 			glfw.set_window_size(self.window, self.img_width, self.img_height)
+
 		self.updateTexture()
 		if self.gazePosition[0] < 0:
-			self.gazePosition = (self.img_width//2, self.img_height//2)
-			self.updateGaze(self.gazeRadius, self.gazePosition)
+			gazePosition = (self.img_height/2, self.img_width/2)
+			self.updateGaze(self.gazeRadius, gazePosition)
+		
 
 	def updateGaze(self, newGazeRadius, newGazePosition):
 		self.gazePosition = newGazePosition
 		self.gazeRadius = newGazeRadius
-		glUniform3f(self.auxParametersLoc, float(self.gazeRadius), float(self.gazePosition[0]), float(self.gazePosition[1]))
+		glUniform3f(self.auxParametersLoc, float(self.gazeRadius), float(self.gazePosition[1]), float(self.gazePosition[0]))
 
 	def updateTexture(self):
-		self.img_height, self.img_width = self.img.size
+		self.img_width, self.img_height = self.img.size
 
 		img_data = numpy.array(list(self.img.getdata()), numpy.uint8)
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, self.img_height, self.img_width, 0, GL_RGB, GL_UNSIGNED_BYTE, img_data)
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, self.img_width, self.img_height, 0, GL_RGB, GL_UNSIGNED_BYTE, img_data)
 		glGenerateMipmap(GL_TEXTURE_2D);
+
+	def saveImage(self, filename):
+		if self.visualize: 
+			glReadBuffer(GL_FRONT)
+		else:
+			glReadBuffer(GL_COLOR_ATTACHMENT0)
+
+		pixels = glReadPixels(0,0,self.img_width,self.img_height,GL_RGB,GL_UNSIGNED_BYTE)
+		image = Image.frombytes("RGB", (self.img_width,self.img_height), pixels)
+		image = image.transpose( Image.FLIP_TOP_BOTTOM)
+		image.save(filename)
 
 	def run(self):
 
-		glClearColor(1, 1, 1, 1.0)
-
-		#while not glfw.window_should_close(window):
-		glfw.poll_events()
+		if not self.visualize:
+			if not glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE:
+				print('Error: Framebuffer binding failed!')
+				exit()
+				glBindFramebuffer(GL_FRAMEBUFFER, 0)
 
 		glClear(GL_COLOR_BUFFER_BIT)
+
+		glViewport(0, 0, self.img_width, self.img_height)
 
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, None)
 
 		glfw.swap_buffers(self.window)
+		glfw.poll_events()		
 
-		time.sleep(1)		
+		if self.visualize:
+			time.sleep(0.5)	
+
 
 
 def usage():
@@ -185,15 +216,16 @@ def usage():
 	print('Application for efficient foveation transform over static images using OpenGL shaders')
 	print('Options:')
 	print('-h, --help\t\t', 'Displays this help')
-	print('-p, --gazePosition\t', "Gaze position coordinates (e.g. '--gazePosition (512, 512)'), default: center of the image")
+	print('-p, --gazePosition\t', "Gaze position coordinates (e.g. '--gazePosition 512,512'), default: center of the image")
 	print('-r, --gazeRadius\t', 'Radius of the circle around gaze position where the resolution of the image is the highest, default: 25')
 	print('-v, --visualize\t\t', 'Show foveated images')
 	print('-d, --inputDir\t\t', 'Input directory, default: images')
-	print('-i, --inputImg\t\t', 'Input image')
+	print('-o, --outputDir\t\t', 'Output directory, default: output')
 
-def main(argv):
+def main():
+
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], 'hp:r:d:i:v', ['help','gazePosition', 'gazeRadius', 'inputDir', 'inputImg', 'visualize'])
+		opts, args = getopt.getopt(sys.argv[1:], 'hp:r:d:i:o:v', ['help','gazePosition', 'gazeRadius', 'inputDir', 'outputDir', 'visualize'])
 	except getopt.GetoptError as err:
 		print(str(err))
 		usage()
@@ -203,7 +235,8 @@ def main(argv):
 	gazePosition = (-1, -1)
 	gazeRadius = 25
 	inputDir = 'images'
-	inputImg = None
+	outputDir = ''
+	saveOutput = False
 
 	#TODO: add error checking for the arguments
 	for o, a in opts:
@@ -218,21 +251,27 @@ def main(argv):
 			gazeRadius = float(a)
 		if o in ['-d', '--inputDir']:
 			inputDir = a
-		if o in ['-i', '--inputImg']:
-			inputImg = a
+		if o in ['-o', '--outputDir']:
+			outputDir = a
+			saveOutput = True
 
 	fov_ogl = Foveate_OGL(gazeRadius=gazeRadius, gazePosition=gazePosition, visualize=visualize)
 
 	imageList = [f for f in listdir(inputDir) if any(f.endswith(ext) for ext in ['jpg', 'jpeg', 'bmp', 'png', 'gif']) ]
 	
-	
+	if saveOutput:
+		makedirs(outputDir, exist_ok=True)
 
 	for imgName in imageList:
 		fov_ogl.loadImgFromFile(imgFilename=join(inputDir, imgName))
-		fov_ogl.updateGaze(gazeRadius, gazePosition)
 		fov_ogl.run()
+
+		if saveOutput:
+			fov_ogl.saveImage(join(outputDir, imgName))
+
+
 
 	glfw.terminate() #close all windows, delete OGL context
 
 if __name__ == "__main__":
-	main(sys.argv[1:])
+	main()

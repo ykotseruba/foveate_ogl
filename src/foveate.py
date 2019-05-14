@@ -65,7 +65,7 @@ void main(void)
 fragment = """
 /* Image is the mip-mapped texture with the image resolution pyramid: */
 uniform sampler2D texture;
-
+#extension GL_ARB_texture_query_levels : enable
 /* Passed from vertex shader: */
 varying vec4  baseColor;
 varying vec2  gazePosition;
@@ -87,7 +87,8 @@ void main(void)
     vec4 texel = texture2DLod(texture, v_texcoord, lod);
 
     /* Apply modulation baseColor and write to framebuffer: */
-    gl_FragColor = texel * baseColor;
+    gl_FragColor = texel;
+    //gl_FragColor = vec4(lod, lod, lod, 1);
 } """
 
 
@@ -109,7 +110,7 @@ quad = gloo.Program(vertex, fragment, count=4)
 quad['position'] = [(-1,-1), (-1,+1), (+1,-1), (+1,+1)]
 quad['texcoord'] = [( 0, 0), ( 0, 1), ( 1, 0), ( 1, 1)]
 quad['texture'] = data.load("images/Yarbus_scaled.jpg")
-quad['auxParameters0'] = [(512, 512, 25, 0)]
+quad['auxParameters0'] = [(512, 512, 100, 0)]
 
 app.run(framecount=1)
 

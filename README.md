@@ -1,17 +1,21 @@
-# foveate_ogl
-Implementation of Geisler&amp;Perry foveation code in Python and OpenGL
+# Foveate_OGL
+Implementation of foveation transform for static images in Python and PyOpenGL
+The basis for this code is the (BlurredMipmapDemo from Psychtoolbox-3)[https://github.com/Psychtoolbox-3/Psychtoolbox-3/blob/master/Psychtoolbox/PsychDemos/BlurredMipmapDemo.m].
 
 # Install
 
-Install Glumpy from github
+This code uses OpenGL 3.3 and GLSL 3.30, make sure your video card supports these and proper drivers are installed.
 
-Install PyOpenGL
+Install requirements using pip3, these include numpy, glfw, PyOpenGL and Pillow.
 ```
-pip3 install PyOpenGL
+pip3 install -r requirements.txt
 ```
 
-Install GLFW
+# Run
+
+To run a demo:
 ```
-sudo apt-get install libglfw3-dev 
-pip3 install glfw
+python3 src/foveate_ogl.py -v
 ```
+
+This will compute foveation transform over two images in the ```images``` directory and display them in a window.

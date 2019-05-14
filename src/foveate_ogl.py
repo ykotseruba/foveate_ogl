@@ -10,7 +10,7 @@ import getopt
 from os import listdir, makedirs
 from os.path import join
 
-MAX_SIZE = 1600
+MAX_SIZE = 5000
 
 vertex_shader = """
 	#version 330
@@ -210,7 +210,6 @@ class Foveate_OGL:
 			time.sleep(0.5)	
 
 
-
 def usage():
 	print('Usage: python3 src/foveate_ogl.py [options]')
 	print('Application for efficient foveation transform over static images using OpenGL shaders')
@@ -269,9 +268,7 @@ def main():
 		if saveOutput:
 			fov_ogl.saveImage(join(outputDir, imgName))
 
-
-
-	glfw.terminate() #close all windows, delete OGL context
+	glfw.terminate()
 
 if __name__ == "__main__":
 	main()

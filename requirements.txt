@@ -1,9 +1,4 @@
-tensorflow_gpu==1.13.0rc1
-matplotlib==3.0.2
-numpy==1.16.1
-scipy==1.2.1
-opencv_python==4.0.0.21
-Keras==2.2.4
-Pillow==5.4.1
-selenium==3.141.0
-scikit_learn==0.20.2
+numpy==1.11.0
+glfw==1.8.0
+PyOpenGL==3.1.0
+Pillow==6.0.0

@@ -33,6 +33,14 @@ To see all available options run:
 python3 src/foveate_ogl.py --help
 ```
 
+The available options include:
+1. ```-i, --inputDir``` - input directory (not processed recursively)
+2. ```-p, --gazePosition``` - set coordinates of the gaze in the image (e.g. --gazePosition 512,512)
+3. ```-r, --gazeRadius``` - set radius of the fovea (the area with the highest resolution)
+4. ```-v, --visualize``` - show foveated images
+5. ```-o, --outputDir``` - output directory (will be created if doesn't exist)
+
+
 
 Should you have any questions about using this code, feel free to raise and issue or email me (yulia_k at eecs.yorku.ca).
 

@@ -2,7 +2,7 @@
 Implementation of foveation transform for static images in Python and PyOpenGL
 The basis for this code is the [BlurredMipmapDemo from Psychtoolbox-3](https://github.com/Psychtoolbox-3/Psychtoolbox-3/blob/master/Psychtoolbox/PsychDemos/BlurredMipmapDemo.m).
 
-Both gaze position and gaze radius (simulation of the fovea where the image resolution is the highest) can be adjusted as shown in the examples below. The left image is foveated with default settings (gaze at the center of the image, gaze radius of 25). The right image is foveated with custom settings (gaze location set to (700,200) and gaze radius of 35).
+Both gaze position and gaze radius (simulation of the fovea where the image resolution is the highest) can be adjusted as shown in the examples below. The left image is foveated with default settings (gaze at the center of the image, gaze radius of 25). The right image is foveated with custom settings (gaze location set to (200,200) and gaze radius of 35).
 
 <div>
     <img src="examples/Yarbus_scaled_default.jpg" width="250" title="Default settings"/>

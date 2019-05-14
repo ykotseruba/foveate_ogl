@@ -171,7 +171,7 @@ class Foveate_OGL:
 	def updateGaze(self, newGazeRadius, newGazePosition):
 		self.gazePosition = newGazePosition
 		self.gazeRadius = newGazeRadius
-		glUniform3f(self.auxParametersLoc, float(self.gazeRadius), float(self.gazePosition[1]), float(self.gazePosition[0]))
+		glUniform3f(self.auxParametersLoc, float(self.gazeRadius), float(self.gazePosition[1]), self.img_height - float(self.gazePosition[0]))
 
 	def updateTexture(self):
 		self.img_width, self.img_height = self.img.size

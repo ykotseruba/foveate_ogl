@@ -12,6 +12,9 @@ from os.path import join
 
 MAX_SIZE = 5000
 
+#shaders are adapted from BlurredMipmapDemo in PsychToolBox
+#(C) 2012 Mario Kleiner - Licensed under MIT license.
+
 vertex_shader = """
 	#version 330
 	in layout(location = 0) vec3 position;

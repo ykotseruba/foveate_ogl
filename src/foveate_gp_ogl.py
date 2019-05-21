@@ -20,18 +20,25 @@ vertex_shader = """
     in layout(location = 0) vec3 position;
     in layout(location = 1) vec3 color;
     in layout(location = 2) vec2 inTexCoords;
-    //uniform vec2 auxParameters; //gaze position
+    uniform vec2 gazeParameters; //gaze position
+    uniform vec3 viewParameters; //dotPitch, viewDist and numLevels
 
     out vec3 newColor;
     out vec2 outTexCoords;
-    //out vec2 gazePosition;
+    out vec2 gazePosition;
+    out float dotPitch;
+    out float viewDist;
+    out float numLevels;
 
     void main()
     {
         gl_Position = vec4(position, 1.0f);
         newColor = color;
         outTexCoords = inTexCoords;
-        //gazePosition = vec2(auxParameters[0], auxParameters[1]);
+        gazePosition = gazeParameters;
+        dotPitch = viewParameters[0];
+        viewDist = viewParameters[1];
+        numLevels = viewParameters[2];
     }
     """
 
@@ -39,16 +46,29 @@ fragment_shader = """
     #version 330
     in vec3 newColor;
     in vec2 outTexCoords;
-    //in vec2 gazePosition;
+    in vec2 gazePosition;
+    in float dotPitch;
+    in float viewDist;
+    in float numLevels;
 
     out vec4 outColor;
     uniform sampler2D imageTex;
-    uniform sampler2D lodTex; //precomputed pyramid levels for each pixel
 
     void main()
     {
-        vec4 lod = texture(lodTex, outTexCoords);      
-        outColor = textureLod(imageTex, outTexCoords, lod[0]);
+        const float PI = 3.14159265359;
+        const float EPSILON2 = 2.3; //constant from Geisler & Perry
+        const float ALPHA = 0.106; //constant from Geisler & Perry
+        const float CTO = 0.015625; //constant from Geisler & Perry
+
+        vec2 outpos = gl_FragCoord.xy;
+        float eradius = distance(outpos, gazePosition)*dotPitch;
+        float ec = 180*atan(eradius/viewDist)/PI;
+        float eyefreqCones = EPSILON2/(ALPHA*(ec+EPSILON2))*log(1/CTO);
+        float maxfreq = PI/((atan((eradius+dotPitch)/viewDist) - atan((eradius-dotPitch)/viewDist))*180);
+        float lod = max(0, min(numLevels, maxfreq/eyefreqCones));
+     
+        outColor = textureLod(imageTex, outTexCoords, lod);
     }
     """
 
@@ -62,15 +82,10 @@ class Foveate_GP_OGL:
         self.pix2deg = pix2deg
         self.gazePosition = gazePosition
 
-        self.CTO = 1/64 #constant from Geisler & Perry
-        self.alpha = 0.106  #constant from Geisler & Perry
-        self.epsilon2 = 2.3 #constant from Geisler & Perry
-
         self.visualize = visualize
 
         self.initGLFW()
         self.initBuffers()
-
 
         self.pyrlevelCones = None
 
@@ -135,48 +150,37 @@ class Foveate_GP_OGL:
         glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 32, ctypes.c_void_p(24))
         glEnableVertexAttribArray(2)
 
+        self.gazeParametersLoc = glGetUniformLocation(self.shader, 'gazeParameters')
+        self.viewParametersLoc = glGetUniformLocation(self.shader, 'viewParameters')
 
-        #self.imgTexture = glGenTextures(1)
-        glActiveTexture(GL_TEXTURE0+0)
-        glBindTexture(GL_TEXTURE_2D, self.imgTexture)
-        glUniform1i(self.imgTexture, 0)
-
+        self.texture = glGenTextures(1)
+        glBindTexture(GL_TEXTURE_2D, self.texture)
         #texture wrapping params
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
-
         #texture filtering params
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-
-        
-        glActiveTexture(GL_TEXTURE0+1)
-        glBindTexture(GL_TEXTURE_2D, self.lodTexture)
-        glUniform1i(self.lodTexture, 1)
-        
-        #texture wrapping params
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
-        
-        #texture filtering params
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
 
         if not self.visualize:
             self.FBO = glGenFramebuffers(1)
             glBindFramebuffer(GL_FRAMEBUFFER, self.FBO)
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, self.imgTexture, 0)
-            
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, self.texture, 0)
+
             self.RBO = glGenRenderbuffers(1)
             glBindRenderbuffer(GL_RENDERBUFFER, self.RBO)
             glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA, MAX_SIZE, MAX_SIZE)
             glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, self.RBO)
+
 
         
     #load image from array
     def loadImgFromArray(self, img = None):
         self.img = img.copy()
         self.img_width, self.img_height = self.img.size
+
+        self.numLevels = 1+math.floor(math.log2(max(self.img_width, self.img_height)))
+
         if self.visualize:
             glfw.set_window_size(self.window, self.img_width, self.img_height)
         #self.updateTexture()
@@ -200,6 +204,9 @@ class Foveate_GP_OGL:
     def loadImgFromFile(self, imgFilename='images/Yarbus_scaled.jpg'):
         self.img = Image.open(imgFilename)
         self.img_width, self.img_height = self.img.size
+
+        self.numLevels = 1+math.floor(math.log2(max(self.img_width, self.img_height)))
+
         if self.visualize:
             glfw.set_window_size(self.window, self.img_width, self.img_height)
 
@@ -221,45 +228,15 @@ class Foveate_GP_OGL:
 
     def updateGaze(self, newGazePosition):
         self.gazePosition = newGazePosition
-        #glUniform2f(self.auxParametersLoc, float(self.gazePosition[1]), self.img_height - float(self.gazePosition[0]))
-        
+        glUniform2f(self.gazeParametersLoc, float(self.gazePosition[1]), self.img_height - float(self.gazePosition[0]))
+        glUniform3f(self.viewParametersLoc, float(self.dotPitch), float(self.viewDist), float(self.numLevels))
 
     def updateTexture(self):
         self.img_width, self.img_height = self.img.size
 
         img_data = np.array(list(self.img.getdata()), np.uint8)
-        glActiveTexture(GL_TEXTURE0+0)
-        glBindTexture(GL_TEXTURE_2D, self.imgTexture)
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, self.img_width, self.img_height, 0, GL_RGB, GL_UNSIGNED_BYTE, img_data)
         glGenerateMipmap(GL_TEXTURE_2D);
-
-        self.computeLod()
-
-        glActiveTexture(GL_TEXTURE0+1)
-        glBindTexture(GL_TEXTURE_2D, self.lodTexture)
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, self.img_width, self.img_height, 0, GL_RED, GL_FLOAT, self.pyrlevelCones)
-
-
-    #compute for each pixel the level of the pyramid to sample from
-    def computeLod(self):
-        #eradius is the radial distance between each point and the point of gaze in meters.
-        distPx = np.sqrt(np.power(self.ix-self.gazePosition[1], 2) + np.power(self.iy-self.gazePosition[0], 2))
-
-        eradius = distPx*self.dotPitch
-
-        #ec - eccentricity from the fovea center for each pixel in degrees
-        ec = 180*np.arctan(eradius/self.viewDist)/math.pi
-
-        eyefreqCones = self.epsilon2/(self.alpha*(ec + self.epsilon2))*math.log(1/self.CTO)
-
-        maxfreq = math.pi/((np.arctan((eradius+self.dotPitch)/self.viewDist) - np.arctan((eradius-self.dotPitch)/self.viewDist))*180);        
-        
-        self.pyrlevelCones = np.divide(maxfreq, eyefreqCones)
-        numLevels = 1+math.floor(math.log2(max(self.img_width, self.img_height)))
-
-
-        #constrain pyrlevel to conform to the levels of the pyramid which have been computed
-        self.pyrlevelCones = np.maximum(0, np.minimum(numLevels, self.pyrlevelCones))
 
     def saveImage(self, filename):
         if self.visualize: 
@@ -272,12 +249,8 @@ class Foveate_GP_OGL:
         image = image.transpose( Image.FLIP_TOP_BOTTOM)
         image.save(filename)
 
-    def run(self):
 
-        glActiveTexture(GL_TEXTURE0+0)
-        glBindTexture(GL_TEXTURE_2D, self.imgTexture)
-        glActiveTexture(GL_TEXTURE0+1)
-        glBindTexture(GL_TEXTURE_2D, self.lodTexture)
+    def run(self):
 
         if not self.visualize:
             if not glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE:

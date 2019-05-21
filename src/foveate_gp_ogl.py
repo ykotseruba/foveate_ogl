@@ -44,11 +44,13 @@ fragment_shader = """
     out vec4 outColor;
     uniform sampler2D imageTex;
     uniform sampler2D lodTex; //precomputed pyramid levels for each pixel
+
     void main()
     {
         vec2 outpos = gl_FragCoord.xy;
-        vec4 lod = texture(lodTex, outpos);      
-        outColor = textureLod(imageTex, outTexCoords, lod[0]);
+        //vec4 lod = texture(lodTex, outTexCoords);      
+        //outColor = textureLod(imageTex, outTexCoords, lod[0]);
+        outColor = texture(lodTex, outTexCoords);
     }
     """
 
@@ -60,7 +62,7 @@ class Foveate_GP_OGL:
         self.dotPitch = dotPitch
         self.viewDist = viewDist
         self.pix2deg = pix2deg
-        self.gazePosition = gazePosition        
+        self.gazePosition = gazePosition
 
         self.CTO = 1/64 #constant from Geisler & Perry
         self.alpha = 0.106  #constant from Geisler & Perry
@@ -156,7 +158,8 @@ class Foveate_GP_OGL:
             self.FBO = glGenFramebuffers(1)
             glBindFramebuffer(GL_FRAMEBUFFER, self.FBO)
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, self.imgTexture, 0)
-
+            //glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, self.lodTexture, 0)
+            
             self.RBO = glGenRenderbuffers(1)
             glBindRenderbuffer(GL_RENDERBUFFER, self.RBO)
             glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA, MAX_SIZE, MAX_SIZE)
@@ -355,7 +358,6 @@ def main():
     for imgName in imageList:
         fov_ogl.loadImgFromFile(imgFilename=join(inputDir, imgName))
         fov_ogl.run()
-
         if saveOutput:
             fov_ogl.saveImage(join(outputDir, imgName))
 

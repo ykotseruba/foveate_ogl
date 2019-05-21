@@ -13,6 +13,33 @@ from os.path import join
 MAX_SIZE = 5000
 
 
+#fragment shader for Geisler & Perry implementation
+gp_fragment_shader = """
+	#version 330
+
+	#define epsilon2  2.3
+	#define CTO 0.015625 //1/64
+	#define alpha 0.106
+	#define PI 3.14
+
+
+	in vec3 newColor;
+	in vec2 outTexCoords;
+	in float gazeRadius;
+	in vec2 gazePosition;
+
+	out vec4 outColor;
+	uniform sampler2D imageTexture;
+	uniform sampler2D lodTexture; #which lod values to use for each pixel
+
+	void main()
+	{
+		float lod = texture2D(lodTexture, outTexCoords);		
+		outColor = textureLod(imageTexture, outTexCoords, lod);
+	}
+	"""
+
+
 
 #shaders below are adapted from BlurredMipmapDemo in PsychToolBox
 #(C) 2012 Mario Kleiner - Licensed under MIT license.
@@ -47,12 +74,12 @@ fragment_shader = """
 	in vec2 gazePosition;
 
 	out vec4 outColor;
-	uniform sampler2D samplerTex;
+	uniform sampler2D imageTexture;
 	void main()
 	{
 		vec2 outpos = gl_FragCoord.xy;
 		float lod = log2(distance(outpos, gazePosition) / gazeRadius);		
-		outColor = textureLod(samplerTex, outTexCoords, lod);
+		outColor = textureLod(imageTexture, outTexCoords, lod);
 	}
 	"""
 
@@ -224,8 +251,10 @@ def usage():
 	print('-h, --help\t\t', 'Displays this help')
 	print('-p, --gazePosition\t', "Gaze position coordinates (e.g. '--gazePosition 512,512'), default: center of the image")
 	print('-r, --gazeRadius\t', 'Radius of the circle around gaze position where the resolution of the image is the highest, default: 25')
+	print('-d, --viewDist\t', 'Viewing distance in m (default 0.60)')
+	print('-x, --pix2deg\t', 'Number of pixels per degree of visual angle (default 32)')
 	print('-v, --visualize\t\t', 'Show foveated images')
-	print('-d, --inputDir\t\t', 'Input directory, default: images')
+	print('-i, --inputDir\t\t', 'Input directory, default: images')
 	print('-o, --outputDir\t\t', 'Output directory, default: output')
 
 def main():

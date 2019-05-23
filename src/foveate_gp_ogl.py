@@ -15,6 +15,8 @@ MAX_SIZE = 5000
 #shaders below are adapted from BlurredMipmapDemo in PsychToolBox
 #(C) 2012 Mario Kleiner - Licensed under MIT license.
 
+#Geisler&Perry foveation transform is adapted from https://github.com/dicarlolab/foveate/blob/master/foveate.m
+
 vertex_shader = """
     #version 330
     in layout(location = 0) vec3 position;
@@ -283,8 +285,8 @@ def usage():
     print('Options:')
     print('-h, --help\t\t', 'Displays this help')
     print('-p, --gazePosition\t', "Gaze position coordinates (e.g. '--gazePosition 512,512'), default: center of the image")
-    print('-d, --viewDist\t', 'Radius of the circle around gaze position where the resolution of the image is the highest, default: 25')
-    print('-x, --pix2deg\t', 'Number of pixels per deg vis angle')
+    print('-d, --viewDist\t', 'Distance to the stimuli in meters, default: 0.6')
+    print('-x, --pix2deg\t', 'Number of pixels per deg vis angle (default 32)')
     print('-v, --visualize\t\t', 'Show foveated images')
     print('-i, --inputDir\t\t', 'Input directory, default: images')
     print('-o, --outputDir\t\t', 'Output directory, default: output')
@@ -304,6 +306,8 @@ def main():
     inputDir = 'images'
     outputDir = ''
     saveOutput = False
+    viewDist = 0.6 #default setting
+    pix2deg = 32 #assume 32 pixels per 1 degree of visual angle as default
 
     #TODO: add error checking for the arguments
     for o, a in opts:

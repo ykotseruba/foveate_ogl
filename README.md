@@ -4,14 +4,20 @@ The basis for this code is the [BlurredMipmapDemo from Psychtoolbox-3](https://g
 
 Both gaze position and gaze radius (simulation of the fovea where the image resolution is the highest) can be adjusted as shown in the examples below. The left image is foveated with default settings (gaze at the center of the image, gaze radius of 25). The right image is foveated with custom settings (gaze location set to (200,200) and gaze radius of 35).
 
-## Foveate OGL Geisler&Perry
-Implementation of foveation transform described in [WS Geisler & JS Perry, "Real-time foveated multiresolution system for low-bandwidth video communication", Human vision and electronic imaging III, 1998](https://www.spiedigitallibrary.org/proceedings/Download?fullDOI=10.1117/12.320120).
-
-Gaze position, size and distance to stimuli can be changed via parameters to simulate particular experimental conditions.
-
 <div>
     <img src="examples/Yarbus_scaled_default.jpg" width="250" title="Default settings"/>
     <img src="examples/Yarbus_scaled_custom.jpg" width="250" title="Custom settings"/>
+</div>
+
+
+## Foveate OGL Geisler&Perry
+Implementation of foveation transform described in [WS Geisler & JS Perry, "Real-time foveated multiresolution system for low-bandwidth video communication", Human vision and electronic imaging III, 1998](https://www.spiedigitallibrary.org/proceedings/Download?fullDOI=10.1117/12.320120).
+
+Gaze position, size and distance to stimuli can be changed via parameters to simulate particular experimental conditions as shown in the examples below. The left image is foveated with default settings (gaze at the center of the image, distance 0.6m, resolution 32 pix2deg). The right image is foveated with custom settings (distance of 2m, resolution of 100 pix2deg).
+
+<div>
+    <img src="examples/Yarbus_Shishkin_gp_default.jpg" width="250" title="Default settings"/>
+    <img src="examples/Yarbus_Shishkin_gp_custom.jpg" width="250" title="Custom settings"/>
 </div>
 
 ## Install

@@ -328,6 +328,7 @@ def main():
             outputDir = a
             saveOutput = True
 
+    print(viewDist, gazePosition, pix2deg)
     fov_ogl = Foveate_GP_OGL(viewDist=viewDist, gazePosition=gazePosition, pix2deg=pix2deg, visualize=visualize)
 
     imageList = [f for f in listdir(inputDir) if any(f.endswith(ext) for ext in ['jpg', 'jpeg', 'bmp', 'png', 'gif']) ]

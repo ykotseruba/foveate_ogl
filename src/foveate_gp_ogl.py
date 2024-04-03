@@ -19,9 +19,9 @@ MAX_SIZE = 5000
 
 vertex_shader = """
     #version 330
-    in layout(location = 0) vec3 position;
-    in layout(location = 1) vec3 color;
-    in layout(location = 2) vec2 inTexCoords;
+    layout(location = 0) in vec3 position;
+    layout(location = 1) in vec3 color;
+    layout(location = 2) in vec2 inTexCoords;
     uniform vec2 gazeParameters; //gaze position
     uniform vec3 viewParameters; //dotPitch, viewDist and numLevels
 

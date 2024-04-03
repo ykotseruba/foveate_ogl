@@ -46,9 +46,9 @@ gp_fragment_shader = """
 
 vertex_shader = """
 	#version 330
-	in layout(location = 0) vec3 position;
-	in layout(location = 1) vec3 color;
-	in layout(location = 2) vec2 inTexCoords;
+	layout(location = 0) in vec3 position;
+	layout(location = 1) in vec3 color;
+	layout(location = 2) in vec2 inTexCoords;
 	uniform vec3 auxParameters;
 
 	out vec3 newColor;
